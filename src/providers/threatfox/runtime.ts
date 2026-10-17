@@ -44,10 +44,15 @@ export const threatfoxActionHandlers: ProviderActionHandlers<"threatfox", Threat
     if (queryStatus !== "ok" || !record) {
       throw new ProviderRequestError(502, `ThreatFox returned an unexpected query_status: ${queryStatus || "missing"}`);
     }
+    // An "ok" without an entry array is a malformed upstream response: never
+    // report a positive IOC match with zero evidence.
+    if (!Array.isArray(record.data)) {
+      throw new ProviderRequestError(502, "ThreatFox returned ok without an entry array");
+    }
     return {
       found: true,
       query_status: queryStatus,
-      entries: (optionalObjectArray(record.data) ?? []).map(normalizeIocEntry),
+      entries: optionalObjectArray(record.data).map(normalizeIocEntry),
     };
   },
 };
