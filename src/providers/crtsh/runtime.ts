@@ -67,7 +67,9 @@ interface CrtshRequest {
 
 async function requestCrtsh(request: CrtshRequest): Promise<unknown> {
   const url = new URL(crtshApiBaseUrl);
-  setSearchParams(url, { q: request.domain, output: "json" });
+  // Explicit ILIKE: crt.sh defaults hyphenated queries to "Single" matching,
+  // which disables % wildcards (see certwatch_db web_apis.fnc).
+  setSearchParams(url, { q: request.domain, output: "json", match: "ILIKE" });
   return runProviderRequest({ label: "crt.sh", signal: request.context.signal }, async (signal) => {
     const response = await request.context.fetcher(url, {
       headers: {
